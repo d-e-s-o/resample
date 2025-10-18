@@ -1,6 +1,7 @@
 [package]
 name = "samplerate"
 version = "0.2.4"
+edition = "2021"
 authors = ["Frederick Gnodtke <frederick@gnodtke.net>"]
 readme = "README.md"
 categories = ["multimedia::audio"]

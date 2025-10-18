@@ -9,11 +9,9 @@ This library provides a high-level API for [libsamplerate-sys](https://github.co
 # Example
 
 ```rust
-extern crate samplerate;
-extern crate hound;
+use hound::{WavSpec, WavWriter, SampleFormat};
 
 use samplerate::{convert, ConverterType};
-use hound::{WavSpec, WavWriter, SampleFormat};
 
 fn main() {
     // Generate a 880Hz sine wave for 1 second in 44100Hz with one channel.

@@ -1,5 +1,3 @@
-extern crate libsamplerate_sys;
-
 pub mod converter_type;
 pub mod error;
 pub mod samplerate;
@@ -10,9 +8,6 @@ pub use crate::samplerate::*;
 use libsamplerate_sys::*;
 use std::ffi::CStr;
 use std::convert::TryInto;
-
-#[cfg(test)]
-extern crate rstest;
 
 #[cfg(test)]
 mod sanity_test;

@@ -1,6 +1,3 @@
-extern crate samplerate;
-extern crate hound;
-
 use samplerate::{convert, ConverterType};
 use hound::{WavSpec, WavWriter, SampleFormat};
 
