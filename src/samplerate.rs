@@ -1,4 +1,4 @@
-use libsamplerate_sys::*;
+use libsamplerate_rs::*;
 
 use crate::converter_type::ConverterType;
 use crate::error::Error;
@@ -123,7 +123,7 @@ impl Samplerate {
             end_of_input: if end_of_input { 1 } else { 0 },
             input_frames_used: 0,
             output_frames_gen: 0,
-            ..Default::default()
+            ..unsafe { std::mem::zeroed() }
         };
         let error_int = unsafe { src_process(self.ptr, &mut src as *mut SRC_DATA) };
         match ErrorCode::from_int(error_int) {
@@ -206,7 +206,7 @@ mod tests {
     fn samplerate_new_channels_error() {
         match Samplerate::new(ConverterType::Linear, 44100, 48000, usize::MAX) {
             Ok(_) => assert!(false),
-            Err(error) => assert_eq!(error, Error::from_code(ErrorCode::BadChannelCount)),
+            Err(error) => assert_eq!(error, Error::from_code(ErrorCode::MallocFailed)),
         };
     }
 

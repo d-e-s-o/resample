@@ -1,6 +1,6 @@
 use std::ffi::CStr;
 
-use libsamplerate_sys::*;
+use libsamplerate_rs::*;
 
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]

@@ -8,10 +8,11 @@ mod sanity_test;
 use std::convert::TryInto;
 use std::ffi::CStr;
 
+use libsamplerate_rs::*;
+
 pub use crate::converter_type::*;
 pub use crate::error::*;
 pub use crate::samplerate::*;
-use libsamplerate_sys::*;
 
 /// Perform a simple samplerate conversion of a large chunk of audio.
 /// This calls `src_simple` of libsamplerate which is not suitable for streamed audio. Use the
@@ -56,7 +57,7 @@ pub fn convert(
         end_of_input: 0,
         input_frames_used: 0,
         output_frames_gen: 0,
-        ..Default::default()
+        ..unsafe { std::mem::zeroed() }
     };
     let error_int = unsafe {
         src_simple(
@@ -87,7 +88,7 @@ mod tests {
     fn correct_version() {
         assert_eq!(
             version(),
-            "libsamplerate-0.1.9 (c) 2002-2008 Erik de Castro Lopo"
+            "libsamplerate-0.2.2 (c) 2002-2008 Erik de Castro Lopo"
         );
     }
 }
