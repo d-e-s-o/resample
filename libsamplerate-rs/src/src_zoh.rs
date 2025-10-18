@@ -336,7 +336,7 @@ pub unsafe extern "C" fn zoh_state_new(
         *error = SRC_ERR_MALLOC_FAILED;
         return 0 as *mut SRC_STATE;
     }
-    (*state).vt = &mut zoh_state_vt;
+    (*state).vt = &raw mut zoh_state_vt;
     zoh_reset(state);
     *error = SRC_ERR_NO_ERROR;
     return state;

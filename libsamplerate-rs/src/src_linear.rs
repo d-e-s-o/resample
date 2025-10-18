@@ -351,7 +351,7 @@ pub unsafe extern "C" fn linear_state_new(
         *error = SRC_ERR_MALLOC_FAILED;
         return 0 as *mut SRC_STATE;
     }
-    (*state).vt = &mut linear_state_vt;
+    (*state).vt = &raw mut linear_state_vt;
     linear_reset(state);
     *error = SRC_ERR_NO_ERROR;
     return state;
