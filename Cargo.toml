@@ -1,3 +1,9 @@
+[workspace]
+members = [
+  ".",
+  "libsamplerate-rs",
+]
+
 [package]
 name = "samplerate"
 version = "0.2.4"
