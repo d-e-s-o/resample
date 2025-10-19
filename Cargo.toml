@@ -5,16 +5,27 @@ members = [
 ]
 
 [package]
-name = "samplerate"
-version = "0.2.4"
+name = "resample"
+version = "0.0.0"
 edition = "2021"
-authors = ["Frederick Gnodtke <frederick@gnodtke.net>"]
-readme = "README.md"
-categories = ["multimedia::audio"]
-description = "A library based on libsamplerate for converting samplerates"
-repository = "https://github.com/Prior99/rust-samplerate"
-keywords = ["audio", "samplerate"]
+authors = ["Daniel Mueller <deso@posteo.net>"]
 license = "BSD-2-Clause"
+readme = "README.md"
+repository = "https://github.com/d-e-s-o/resample"
+documentation = "https://docs.rs/resample"
+categories = [
+  "algorithms",
+  "api-bindings",
+  "multimedia::audio",
+]
+keywords = [
+  "audio",
+  "convert",
+  "resample",
+  "samplerate",
+  "stream",
+]
+description = "A library based on libsamplerate for converting samplerates"
 
 [dependencies]
 libsamplerate-rs = { version = "0.1", path = "libsamplerate-rs" }

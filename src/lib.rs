@@ -24,7 +24,7 @@ pub use crate::samplerate::*;
 /// # Example
 ///
 /// ```
-/// use samplerate::{convert, ConverterType};
+/// use resample::{convert, ConverterType};
 ///
 /// // Generate a 880Hz sine wave for 1 second in 44100Hz with one channel.
 /// let freq = std::f32::consts::PI * 880f32 / 44100f32;

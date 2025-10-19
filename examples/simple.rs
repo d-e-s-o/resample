@@ -2,8 +2,8 @@ use hound::SampleFormat;
 use hound::WavSpec;
 use hound::WavWriter;
 
-use samplerate::convert;
-use samplerate::ConverterType;
+use resample::convert;
+use resample::ConverterType;
 
 
 fn main() {
