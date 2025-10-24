@@ -32,7 +32,7 @@ libsamplerate-rs = { version = "0.1", path = "libsamplerate-rs" }
 
 [dev-dependencies]
 hound = "3.4"
-rstest = "0.6"
+rstest = { version = "0.26", default-features = false }
 
 [lints.rust]
 deprecated-safe = "warn"
