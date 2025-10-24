@@ -5,9 +5,6 @@ pub mod samplerate;
 #[cfg(test)]
 mod sanity_test;
 
-use std::convert::TryInto;
-use std::ffi::CStr;
-
 use libsamplerate_rs::*;
 
 pub use crate::converter_type::*;
@@ -70,25 +67,5 @@ pub fn convert(
     match error_code {
         ErrorCode::NoError => Ok(output),
         _ => Err(Error::from_code(error_code)),
-    }
-}
-
-/// Returns the version of `libsamplerate` used by this crate as a string.
-pub fn version() -> &'static str {
-    unsafe { CStr::from_ptr(src_get_version()) }
-        .to_str()
-        .unwrap()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn correct_version() {
-        assert_eq!(
-            version(),
-            "libsamplerate-0.2.2 (c) 2002-2008 Erik de Castro Lopo"
-        );
     }
 }
