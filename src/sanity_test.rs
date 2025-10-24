@@ -3,6 +3,8 @@ use std::f64::consts::PI;
 
 use rstest::rstest;
 
+use crate::ConverterType;
+
 
 #[rustfmt::skip]
 #[rstest(n, from_rate, to_rate, n_ch, bleed_size, in_bleed_eps, out_bleed_eps,
@@ -18,6 +20,14 @@ fn simple_resample(
     from_rate: usize,
     to_rate: usize,
     n_ch: usize,
+    #[values(
+        ConverterType::SincBestQuality,
+        ConverterType::SincMediumQuality,
+        ConverterType::SincFastest,
+        ConverterType::ZeroOrderHold,
+        ConverterType::Linear
+    )]
+    converter: ConverterType,
     bleed_size: usize,
     in_bleed_eps: f32,
     out_bleed_eps: f32,
@@ -31,7 +41,7 @@ fn simple_resample(
         from_rate as u32,
         to_rate as u32,
         n_ch,
-        crate::ConverterType::SincBestQuality,
+        converter,
         &data,
     )
     .unwrap();
@@ -39,7 +49,7 @@ fn simple_resample(
         to_rate as u32,
         from_rate as u32,
         n_ch,
-        crate::ConverterType::SincBestQuality,
+        converter,
         &down_data,
     )
     .unwrap();
@@ -47,22 +57,27 @@ fn simple_resample(
         up_data.len(),
         ((n * to_rate).div_ceil(from_rate) * from_rate).div_ceil(to_rate) * n_ch
     );
-    let max_diff = data
-        .iter()
-        .enumerate()
-        .zip(up_data.iter())
-        .map(|((i, a), b)| (i, (a - b).abs()))
-        .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-        .unwrap();
-    let max_diff_bleed = data
-        .iter()
-        .take((n - bleed_size) * n_ch)
-        .enumerate()
-        .skip(bleed_size * n_ch)
-        .zip(up_data.iter().skip(bleed_size * n_ch))
-        .map(|((i, a), b)| (i, (a - b).abs()))
-        .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-        .unwrap();
-    assert!(max_diff_bleed.1 < in_bleed_eps);
-    assert!(max_diff.1 < out_bleed_eps);
+
+    // For now we only assert differences for the best quality
+    // resampling mode.
+    if converter == ConverterType::SincBestQuality {
+        let max_diff = data
+            .iter()
+            .enumerate()
+            .zip(up_data.iter())
+            .map(|((i, a), b)| (i, (a - b).abs()))
+            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+            .unwrap();
+        let max_diff_bleed = data
+            .iter()
+            .take((n - bleed_size) * n_ch)
+            .enumerate()
+            .skip(bleed_size * n_ch)
+            .zip(up_data.iter().skip(bleed_size * n_ch))
+            .map(|((i, a), b)| (i, (a - b).abs()))
+            .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+            .unwrap();
+        assert!(max_diff_bleed.1 < in_bleed_eps, "{} | {in_bleed_eps}", max_diff_bleed.1);
+        assert!(max_diff.1 < out_bleed_eps, "{} | {out_bleed_eps}", max_diff.1);
+    }
 }
