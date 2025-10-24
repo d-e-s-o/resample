@@ -1,4 +1,5 @@
 use std::cmp::PartialOrd;
+use std::f64::consts::PI;
 
 use rstest::rstest;
 
@@ -23,7 +24,7 @@ fn simple_resample(
 ) {
     let sig_freq = 128.0f64;
     let data = (0..n * n_ch)
-        .map(|i| (2.0 * std::f64::consts::PI * sig_freq * ((i / n_ch) as f64 / n as f64)).sin())
+        .map(|i| (2.0 * PI * sig_freq * ((i / n_ch) as f64 / n as f64)).sin())
         .map(|x| x as f32)
         .collect::<Vec<f32>>();
     let down_data = crate::convert(
@@ -44,7 +45,7 @@ fn simple_resample(
     .unwrap();
     assert_eq!(
         up_data.len(),
-        ((n * to_rate + (from_rate - 1)) / from_rate * from_rate + (to_rate - 1)) / to_rate * n_ch
+        ((n * to_rate).div_ceil(from_rate) * from_rate).div_ceil(to_rate) * n_ch
     );
     let max_diff = data
         .iter()
@@ -62,7 +63,6 @@ fn simple_resample(
         .map(|((i, a), b)| (i, (a - b).abs()))
         .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
         .unwrap();
-    dbg!(max_diff, max_diff_bleed);
     assert!(max_diff_bleed.1 < in_bleed_eps);
     assert!(max_diff.1 < out_bleed_eps);
 }

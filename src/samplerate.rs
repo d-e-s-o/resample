@@ -1,4 +1,12 @@
-use libsamplerate_rs::*;
+use libsamplerate_rs::src_clone;
+use libsamplerate_rs::src_delete;
+use libsamplerate_rs::src_get_channels;
+use libsamplerate_rs::src_is_valid_ratio;
+use libsamplerate_rs::src_new;
+use libsamplerate_rs::src_process;
+use libsamplerate_rs::src_reset;
+use libsamplerate_rs::SRC_DATA;
+use libsamplerate_rs::SRC_STATE;
 
 use crate::converter_type::ConverterType;
 use crate::error::Error;
@@ -24,6 +32,7 @@ use crate::error::ErrorCode;
 /// let resampled = converter.process_last(&input).unwrap();
 /// assert_eq!(resampled.len(), 48000);
 /// ```
+#[derive(Debug)]
 pub struct Samplerate {
     ptr: *mut SRC_STATE,
     from_rate: u32,
@@ -37,7 +46,7 @@ impl Samplerate {
         from_rate: u32,
         to_rate: u32,
         channels: usize,
-    ) -> Result<Samplerate, Error> {
+    ) -> Result<Self, Error> {
         // First, check that the provided ratio is supported by libsamplerate.
         let ratio = to_rate as f64 / from_rate as f64;
         if unsafe { src_is_valid_ratio(ratio) } == 0 {
@@ -53,7 +62,7 @@ impl Samplerate {
             )
         };
         match ErrorCode::from_int(error_int) {
-            ErrorCode::NoError => Ok(Samplerate {
+            ErrorCode::NoError => Ok(Self {
                 ptr,
                 from_rate,
                 to_rate,
@@ -123,7 +132,6 @@ impl Samplerate {
             end_of_input: if end_of_input { 1 } else { 0 },
             input_frames_used: 0,
             output_frames_gen: 0,
-            ..unsafe { std::mem::zeroed() }
         };
         let error_int = unsafe { src_process(self.ptr, &mut src as *mut SRC_DATA) };
         match ErrorCode::from_int(error_int) {
@@ -155,7 +163,7 @@ impl Samplerate {
                 loop {
                     match self._process(&[0f32; 0], output_len, true) {
                         Ok(output_last) => {
-                            if output_last.len() < 1 {
+                            if output_last.is_empty() {
                                 break;
                             } else {
                                 output.extend(output_last);
@@ -179,7 +187,7 @@ impl Drop for Samplerate {
 
 impl Clone for Samplerate {
     /// Might panic if the underlying `src_clone` method from libsamplerate returns an error.
-    fn clone(&self) -> Samplerate {
+    fn clone(&self) -> Self {
         let mut error_int = 0i32;
         let ptr: *mut SRC_STATE = unsafe { src_clone(self.ptr, &mut error_int as *mut i32) };
         let error_code = ErrorCode::from_int(error_int);
@@ -189,7 +197,7 @@ impl Clone for Samplerate {
                 error_code.description()
             );
         }
-        Samplerate {
+        Self {
             ptr,
             from_rate: self.from_rate,
             to_rate: self.to_rate,
@@ -200,12 +208,14 @@ impl Clone for Samplerate {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::usize;
+
+    use std::f32::consts::PI;
+
 
     #[test]
     fn samplerate_new_channels_error() {
         match Samplerate::new(ConverterType::Linear, 44100, 48000, usize::MAX) {
-            Ok(_) => assert!(false),
+            Ok(_) => unreachable!(),
             Err(error) => assert_eq!(error, Error::from_code(ErrorCode::MallocFailed)),
         };
     }
@@ -226,7 +236,7 @@ mod tests {
     #[test]
     fn samplerate_conversion() {
         // Generate a 880Hz sine wave for 1 second in 44100Hz with one channel.
-        let freq = std::f32::consts::PI * 880f32 / 44100f32;
+        let freq = PI * 880f32 / 44100f32;
         let input: Vec<f32> = (0..44100).map(|i| (freq * i as f32).sin()).collect();
 
         // Create a new converter.

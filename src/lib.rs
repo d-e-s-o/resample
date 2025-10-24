@@ -1,3 +1,5 @@
+//! A library for sample rate conversion of audio.
+
 pub mod converter_type;
 pub mod error;
 pub mod samplerate;
@@ -5,11 +7,15 @@ pub mod samplerate;
 #[cfg(test)]
 mod sanity_test;
 
-use libsamplerate_rs::*;
+pub use libsamplerate_rs;
 
-pub use crate::converter_type::*;
-pub use crate::error::*;
-pub use crate::samplerate::*;
+use libsamplerate_rs::src_simple;
+use libsamplerate_rs::SRC_DATA;
+
+pub use crate::converter_type::ConverterType;
+pub use crate::error::Error;
+pub use crate::error::ErrorCode;
+pub use crate::samplerate::Samplerate;
 
 /// Perform a simple samplerate conversion of a large chunk of audio.
 /// This calls `src_simple` of libsamplerate which is not suitable for streamed audio. Use the
@@ -42,8 +48,7 @@ pub fn convert(
     assert_eq!(input_len % channels, 0);
     let input_frames = input_len / channels;
     let ratio = to_rate as f64 / from_rate as f64;
-    let output_frames =
-        (input_frames * to_rate as usize + (from_rate as usize - 1)) / from_rate as usize;
+    let output_frames = (input_frames * to_rate as usize).div_ceil(from_rate as usize);
     let mut output = vec![0f32; output_frames * channels];
     let mut src = SRC_DATA {
         data_in: input.as_ptr(),
@@ -54,7 +59,6 @@ pub fn convert(
         end_of_input: 0,
         input_frames_used: 0,
         output_frames_gen: 0,
-        ..unsafe { std::mem::zeroed() }
     };
     let error_int = unsafe {
         src_simple(

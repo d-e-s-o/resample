@@ -1,6 +1,12 @@
 use std::ffi::CStr;
 
-use libsamplerate_rs::*;
+use libsamplerate_rs::src_get_description;
+use libsamplerate_rs::src_get_name;
+use libsamplerate_rs::SRC_LINEAR;
+use libsamplerate_rs::SRC_SINC_BEST_QUALITY;
+use libsamplerate_rs::SRC_SINC_FASTEST;
+use libsamplerate_rs::SRC_SINC_MEDIUM_QUALITY;
+use libsamplerate_rs::SRC_ZERO_ORDER_HOLD;
 
 use crate::error::Error;
 use crate::error::ErrorCode;
@@ -19,13 +25,13 @@ pub enum ConverterType {
 
 impl ConverterType {
     /// Create a new `ConverterType` enum from the corresponding integer.
-    pub fn from_int(value: isize) -> Result<ConverterType, Error> {
+    pub fn from_int(value: isize) -> Result<Self, Error> {
         match value {
-            0 => Ok(ConverterType::SincBestQuality),
-            1 => Ok(ConverterType::SincMediumQuality),
-            2 => Ok(ConverterType::SincFastest),
-            3 => Ok(ConverterType::ZeroOrderHold),
-            4 => Ok(ConverterType::Linear),
+            0 => Ok(Self::SincBestQuality),
+            1 => Ok(Self::SincMediumQuality),
+            2 => Ok(Self::SincFastest),
+            3 => Ok(Self::ZeroOrderHold),
+            4 => Ok(Self::Linear),
             _ => Err(Error::from_code(ErrorCode::BadConverter)),
         }
     }

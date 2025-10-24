@@ -1,6 +1,10 @@
+use std::error::Error as StdError;
 use std::ffi::CStr;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::Result as FmtResult;
 
-use libsamplerate_rs::*;
+use libsamplerate_rs::src_strerror;
 
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -34,40 +38,40 @@ pub enum ErrorCode {
 
 impl ErrorCode {
     /// Create a new `ConverterType` enum from the corresponding integer.
-    pub fn from_int(value: i32) -> ErrorCode {
+    pub fn from_int(value: i32) -> Self {
         match value {
-            0 => ErrorCode::NoError,
-            1 => ErrorCode::MallocFailed,
-            2 => ErrorCode::BadState,
-            3 => ErrorCode::BadData,
-            4 => ErrorCode::BadDataPtr,
-            5 => ErrorCode::NoPrivate,
-            6 => ErrorCode::BadSrcRatio,
-            7 => ErrorCode::BadProcPtr,
-            8 => ErrorCode::ShiftBits,
-            9 => ErrorCode::FilterLen,
-            10 => ErrorCode::BadConverter,
-            11 => ErrorCode::BadChannelCount,
-            12 => ErrorCode::SincBadBufferLen,
-            13 => ErrorCode::SizeIncompatibility,
-            14 => ErrorCode::BadPrivPtr,
-            15 => ErrorCode::BadSincState,
-            16 => ErrorCode::DataOverlap,
-            17 => ErrorCode::BadCallback,
-            18 => ErrorCode::BadMode,
-            19 => ErrorCode::NullCallback,
-            20 => ErrorCode::NoVariableRatio,
-            21 => ErrorCode::SincPrepareDataBadLen,
-            22 => ErrorCode::BadInternalState,
-            23 => ErrorCode::MaxError,
-            _ => ErrorCode::Unknown,
+            0 => Self::NoError,
+            1 => Self::MallocFailed,
+            2 => Self::BadState,
+            3 => Self::BadData,
+            4 => Self::BadDataPtr,
+            5 => Self::NoPrivate,
+            6 => Self::BadSrcRatio,
+            7 => Self::BadProcPtr,
+            8 => Self::ShiftBits,
+            9 => Self::FilterLen,
+            10 => Self::BadConverter,
+            11 => Self::BadChannelCount,
+            12 => Self::SincBadBufferLen,
+            13 => Self::SizeIncompatibility,
+            14 => Self::BadPrivPtr,
+            15 => Self::BadSincState,
+            16 => Self::DataOverlap,
+            17 => Self::BadCallback,
+            18 => Self::BadMode,
+            19 => Self::NullCallback,
+            20 => Self::NoVariableRatio,
+            21 => Self::SincPrepareDataBadLen,
+            22 => Self::BadInternalState,
+            23 => Self::MaxError,
+            _ => Self::Unknown,
         }
     }
 
     /// Return the human-readable description for this error.
     pub fn description(&self) -> &'static str {
         match self {
-            ErrorCode::Unknown => "Unkown error.",
+            Self::Unknown => "Unkown error.",
             _ => unsafe { CStr::from_ptr(src_strerror(*self as i32)) }
                 .to_str()
                 .unwrap(),
@@ -81,14 +85,14 @@ pub struct Error {
 }
 
 impl Error {
-    pub fn from_int(code: i32) -> Error {
-        Error {
+    pub fn from_int(code: i32) -> Self {
+        Self {
             code: ErrorCode::from_int(code),
         }
     }
 
-    pub fn from_code(code: ErrorCode) -> Error {
-        Error { code }
+    pub fn from_code(code: ErrorCode) -> Self {
+        Self { code }
     }
 
     pub fn code(&self) -> ErrorCode {
@@ -100,15 +104,15 @@ impl Error {
     }
 }
 
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
         write!(f, "{}", self.description())
     }
 }
 
-impl std::error::Error for Error {
+impl StdError for Error {
     fn description(&self) -> &str {
-        &self.code.description()
+        self.code.description()
     }
 }
 
