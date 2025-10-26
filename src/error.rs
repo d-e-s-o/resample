@@ -1,5 +1,7 @@
-use libsamplerate_sys::*;
 use std::ffi::CStr;
+
+use libsamplerate_sys::*;
+
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum ErrorCode {
@@ -66,9 +68,9 @@ impl ErrorCode {
     pub fn description(&self) -> &'static str {
         match self {
             ErrorCode::Unknown => "Unkown error.",
-            _ => unsafe {
-                CStr::from_ptr(src_strerror(*self as i32))
-            }.to_str().unwrap()
+            _ => unsafe { CStr::from_ptr(src_strerror(*self as i32)) }
+                .to_str()
+                .unwrap(),
         }
     }
 }
@@ -147,28 +149,94 @@ mod tests {
     fn description() {
         assert_eq!(ErrorCode::NoError.description(), "No error.");
         assert_eq!(ErrorCode::MallocFailed.description(), "Malloc failed.");
-        assert_eq!(ErrorCode::BadState.description(), "SRC_STATE pointer is NULL.");
-        assert_eq!(ErrorCode::BadData.description(), "SRC_DATA pointer is NULL.");
-        assert_eq!(ErrorCode::BadDataPtr.description(), "SRC_DATA->data_out or SRC_DATA->data_in is NULL.");
-        assert_eq!(ErrorCode::NoPrivate.description(), "Internal error. No private data.");
-        assert_eq!(ErrorCode::BadSrcRatio.description(), "SRC ratio outside [1/256, 256] range.");
-        assert_eq!(ErrorCode::BadSincState.description(), "src_process() called without reset after end_of_input.");
-        assert_eq!(ErrorCode::BadProcPtr.description(), "Internal error. No process pointer.");
-        assert_eq!(ErrorCode::ShiftBits.description(), "Internal error. SHIFT_BITS too large.");
-        assert_eq!(ErrorCode::FilterLen.description(), "Internal error. Filter length too large.");
-        assert_eq!(ErrorCode::BadConverter.description(), "Bad converter number.");
-        assert_eq!(ErrorCode::BadChannelCount.description(), "Channel count must be >= 1.");
-        assert_eq!(ErrorCode::SincBadBufferLen.description(), "Internal error. Bad buffer length. Please report this.");
-        assert_eq!(ErrorCode::SizeIncompatibility.description(), "Internal error. Input data / internal buffer size difference. Please report this.");
-        assert_eq!(ErrorCode::BadPrivPtr.description(), "Internal error. Private pointer is NULL. Please report this.");
-        assert_eq!(ErrorCode::DataOverlap.description(), "Input and output data arrays overlap.");
-        assert_eq!(ErrorCode::BadCallback.description(), "Supplied callback function pointer is NULL.");
-        assert_eq!(ErrorCode::BadMode.description(), "Calling mode differs from initialisation mode (ie process v callback).");
-        assert_eq!(ErrorCode::NullCallback.description(), "Callback function pointer is NULL in src_callback_read ().");
-        assert_eq!(ErrorCode::NoVariableRatio.description(), "This converter only allows constant conversion ratios.");
-        assert_eq!(ErrorCode::SincPrepareDataBadLen.description(), "Internal error : Bad length in prepare_data ().");
-        assert_eq!(ErrorCode::BadInternalState.description(), "Error : Someone is trampling on my internal state.");
-        assert_eq!(ErrorCode::MaxError.description(), "Placeholder. No error defined for this error number.");
+        assert_eq!(
+            ErrorCode::BadState.description(),
+            "SRC_STATE pointer is NULL."
+        );
+        assert_eq!(
+            ErrorCode::BadData.description(),
+            "SRC_DATA pointer is NULL."
+        );
+        assert_eq!(
+            ErrorCode::BadDataPtr.description(),
+            "SRC_DATA->data_out or SRC_DATA->data_in is NULL."
+        );
+        assert_eq!(
+            ErrorCode::NoPrivate.description(),
+            "Internal error. No private data."
+        );
+        assert_eq!(
+            ErrorCode::BadSrcRatio.description(),
+            "SRC ratio outside [1/256, 256] range."
+        );
+        assert_eq!(
+            ErrorCode::BadSincState.description(),
+            "src_process() called without reset after end_of_input."
+        );
+        assert_eq!(
+            ErrorCode::BadProcPtr.description(),
+            "Internal error. No process pointer."
+        );
+        assert_eq!(
+            ErrorCode::ShiftBits.description(),
+            "Internal error. SHIFT_BITS too large."
+        );
+        assert_eq!(
+            ErrorCode::FilterLen.description(),
+            "Internal error. Filter length too large."
+        );
+        assert_eq!(
+            ErrorCode::BadConverter.description(),
+            "Bad converter number."
+        );
+        assert_eq!(
+            ErrorCode::BadChannelCount.description(),
+            "Channel count must be >= 1."
+        );
+        assert_eq!(
+            ErrorCode::SincBadBufferLen.description(),
+            "Internal error. Bad buffer length. Please report this."
+        );
+        assert_eq!(
+            ErrorCode::SizeIncompatibility.description(),
+            "Internal error. Input data / internal buffer size difference. Please report this."
+        );
+        assert_eq!(
+            ErrorCode::BadPrivPtr.description(),
+            "Internal error. Private pointer is NULL. Please report this."
+        );
+        assert_eq!(
+            ErrorCode::DataOverlap.description(),
+            "Input and output data arrays overlap."
+        );
+        assert_eq!(
+            ErrorCode::BadCallback.description(),
+            "Supplied callback function pointer is NULL."
+        );
+        assert_eq!(
+            ErrorCode::BadMode.description(),
+            "Calling mode differs from initialisation mode (ie process v callback)."
+        );
+        assert_eq!(
+            ErrorCode::NullCallback.description(),
+            "Callback function pointer is NULL in src_callback_read ()."
+        );
+        assert_eq!(
+            ErrorCode::NoVariableRatio.description(),
+            "This converter only allows constant conversion ratios."
+        );
+        assert_eq!(
+            ErrorCode::SincPrepareDataBadLen.description(),
+            "Internal error : Bad length in prepare_data ()."
+        );
+        assert_eq!(
+            ErrorCode::BadInternalState.description(),
+            "Error : Someone is trampling on my internal state."
+        );
+        assert_eq!(
+            ErrorCode::MaxError.description(),
+            "Placeholder. No error defined for this error number."
+        );
         assert_eq!(ErrorCode::Unknown.description(), "Unkown error.");
     }
 
@@ -180,7 +248,10 @@ mod tests {
     #[test]
     fn error_description() {
         for i in -1..24 {
-            assert_eq!(Error::from_int(i).description(), ErrorCode::from_int(i).description());
+            assert_eq!(
+                Error::from_int(i).description(),
+                ErrorCode::from_int(i).description()
+            );
         }
     }
 }

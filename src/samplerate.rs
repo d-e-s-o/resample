@@ -1,7 +1,9 @@
-use crate::converter_type::ConverterType;
-use crate::error::{Error, ErrorCode};
 use libsamplerate_sys::*;
-use std::clone::Clone;
+
+use crate::converter_type::ConverterType;
+use crate::error::Error;
+use crate::error::ErrorCode;
+
 
 /// A samplerate converter. This is a wrapper around libsamplerate's `SRC_STATE` which also
 /// stores the source and target samplerates.
@@ -30,7 +32,12 @@ pub struct Samplerate {
 
 impl Samplerate {
     /// Create a new samplerate converter with the given rates and channels.
-    pub fn new(converter_type: ConverterType, from_rate: u32, to_rate: u32, channels: usize) -> Result<Samplerate, Error> {
+    pub fn new(
+        converter_type: ConverterType,
+        from_rate: u32,
+        to_rate: u32,
+        channels: usize,
+    ) -> Result<Samplerate, Error> {
         // First, check that the provided ratio is supported by libsamplerate.
         let ratio = to_rate as f64 / from_rate as f64;
         if unsafe { src_is_valid_ratio(ratio) } == 0 {
@@ -38,15 +45,19 @@ impl Samplerate {
         }
         // Construct the `SRC_STATE` struct and check if that worked.
         let mut error_int = 0i32;
-        let ptr: *mut SRC_STATE = unsafe { src_new(converter_type as i32, channels as i32, &mut error_int as *mut i32) };
+        let ptr: *mut SRC_STATE = unsafe {
+            src_new(
+                converter_type as i32,
+                channels as i32,
+                &mut error_int as *mut i32,
+            )
+        };
         match ErrorCode::from_int(error_int) {
-            ErrorCode::NoError => {
-                Ok(Samplerate {
-                    ptr,
-                    from_rate,
-                    to_rate,
-                })
-            },
+            ErrorCode::NoError => Ok(Samplerate {
+                ptr,
+                from_rate,
+                to_rate,
+            }),
             _ => Err(Error::from_int(error_int)),
         }
     }
@@ -95,9 +106,14 @@ impl Samplerate {
         }
     }
 
-    fn _process(&self, input: &[f32], output_len: usize, end_of_input: bool) -> Result<Vec<f32>, Error> {
+    fn _process(
+        &self,
+        input: &[f32],
+        output_len: usize,
+        end_of_input: bool,
+    ) -> Result<Vec<f32>, Error> {
         let channels = self.channels()?;
-        let mut output = vec![0f32;output_len];
+        let mut output = vec![0f32; output_len];
         let mut src = SRC_DATA {
             data_in: input.as_ptr(),
             data_out: output.as_mut_ptr(),
@@ -111,7 +127,7 @@ impl Samplerate {
         };
         let error_int = unsafe { src_process(self.ptr, &mut src as *mut SRC_DATA) };
         match ErrorCode::from_int(error_int) {
-            ErrorCode::NoError => Ok(output[..src.output_frames_gen as usize*channels].into()),
+            ErrorCode::NoError => Ok(output[..src.output_frames_gen as usize * channels].into()),
             _ => Err(Error::from_int(error_int)),
         }
     }
@@ -121,9 +137,13 @@ impl Samplerate {
     /// interleaved.
     pub fn process(&self, input: &[f32]) -> Result<Vec<f32>, Error> {
         let channels = self.channels()?;
-        self._process(input, (self.ratio() * input.len() as f64) as usize + channels, false)
+        self._process(
+            input,
+            (self.ratio() * input.len() as f64) as usize + channels,
+            false,
+        )
     }
-    
+
     /// Perform a samplerate conversion on last block of given input data.
     /// If the number of channels used was not `1` (Mono), the samples are expected to be stored
     /// interleaved.
@@ -141,12 +161,12 @@ impl Samplerate {
                                 output.extend(output_last);
                             }
                         },
-                        Err(err) => return Err(err)
+                        Err(err) => return Err(err),
                     }
                 }
                 Ok(output)
             },
-            Err(err) => Err(err)
+            Err(err) => Err(err),
         }
     }
 }
@@ -164,7 +184,10 @@ impl Clone for Samplerate {
         let ptr: *mut SRC_STATE = unsafe { src_clone(self.ptr, &mut error_int as *mut i32) };
         let error_code = ErrorCode::from_int(error_int);
         if error_code != ErrorCode::NoError {
-            panic!("Error when cloning Samplerate struct: {}", error_code.description());
+            panic!(
+                "Error when cloning Samplerate struct: {}",
+                error_code.description()
+            );
         }
         Samplerate {
             ptr,
@@ -207,16 +230,21 @@ mod tests {
         let input: Vec<f32> = (0..44100).map(|i| (freq * i as f32).sin()).collect();
 
         // Create a new converter.
-        let mut converter = Samplerate::new(ConverterType::SincBestQuality, 44100, 48000, 1).unwrap();
+        let mut converter =
+            Samplerate::new(ConverterType::SincBestQuality, 44100, 48000, 1).unwrap();
 
         // Resample the audio in chunks.
-        let mut resampled = vec![0f32;0];
+        let mut resampled = vec![0f32; 0];
         let chunk_size = 4410; // 100ms
         for i in 0..input.len() / chunk_size {
             resampled.extend(if i < (input.len() / chunk_size - 1) {
-                converter.process(&input[i * chunk_size .. (i + 1) * chunk_size]).unwrap()
+                converter
+                    .process(&input[i * chunk_size..(i + 1) * chunk_size])
+                    .unwrap()
             } else {
-                converter.process_last(&input[i * chunk_size .. (i + 1) * chunk_size]).unwrap()
+                converter
+                    .process_last(&input[i * chunk_size..(i + 1) * chunk_size])
+                    .unwrap()
             });
         }
         assert_eq!(resampled.len(), 48000);
@@ -225,20 +253,27 @@ mod tests {
         converter.reset().unwrap();
         converter.set_to_rate(44100);
         converter.set_from_rate(48000);
-        let mut output = vec![0f32;0];
+        let mut output = vec![0f32; 0];
         let chunk_size = 4800; // 100ms
         for i in 0..resampled.len() / chunk_size {
             output.extend(if i < (resampled.len() / chunk_size - 1) {
-                converter.process(&resampled[i * chunk_size .. (i + 1) * chunk_size]).unwrap()
+                converter
+                    .process(&resampled[i * chunk_size..(i + 1) * chunk_size])
+                    .unwrap()
             } else {
-                converter.process_last(&resampled[i * chunk_size .. (i + 1) * chunk_size]).unwrap()
+                converter
+                    .process_last(&resampled[i * chunk_size..(i + 1) * chunk_size])
+                    .unwrap()
             });
         }
         assert_eq!(output.len(), 44100);
 
         // Expect the difference between all input frames and all output frames to be less than
         // an epsilon.
-        let error = input.iter().zip(output).fold(0f32, |max, (input, output)| max.max((input - output).abs()));
+        let error = input
+            .iter()
+            .zip(output)
+            .fold(0f32, |max, (input, output)| max.max((input - output).abs()));
         assert!(error < 0.002);
     }
 }
