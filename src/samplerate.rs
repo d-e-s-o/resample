@@ -1,4 +1,3 @@
-use libsamplerate_rs::src_clone;
 use libsamplerate_rs::src_delete;
 use libsamplerate_rs::src_get_channels;
 use libsamplerate_rs::src_is_valid_ratio;
@@ -185,25 +184,6 @@ impl Drop for Samplerate {
     }
 }
 
-impl Clone for Samplerate {
-    /// Might panic if the underlying `src_clone` method from libsamplerate returns an error.
-    fn clone(&self) -> Self {
-        let mut error_int = 0i32;
-        let ptr: *mut SRC_STATE = unsafe { src_clone(self.ptr, &mut error_int as *mut i32) };
-        let error_code = ErrorCode::from_int(error_int);
-        if error_code != ErrorCode::NoError {
-            panic!(
-                "Error when cloning Samplerate struct: {}",
-                error_code.description()
-            );
-        }
-        Self {
-            ptr,
-            from_rate: self.from_rate,
-            to_rate: self.to_rate,
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -224,13 +204,6 @@ mod tests {
     fn samplerate_new_channels_correct() {
         let converter = Samplerate::new(ConverterType::Linear, 44100, 48000, 4).unwrap();
         assert_eq!(converter.channels().unwrap(), 4);
-    }
-
-    #[test]
-    fn samplerate_clone() {
-        let converter = Samplerate::new(ConverterType::Linear, 44100, 48000, 4).unwrap();
-        let cloned = converter.clone();
-        assert_eq!(cloned.channels().unwrap(), 4);
     }
 
     #[test]
