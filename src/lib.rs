@@ -1,5 +1,10 @@
 //! A library for sample rate conversion of audio.
 
+#![cfg_attr(feature = "nightly", feature(test))]
+
+#[cfg(all(test, feature = "nightly"))]
+extern crate test;
+
 pub mod converter_type;
 pub mod error;
 pub mod samplerate;
@@ -75,4 +80,65 @@ pub fn convert(
 
     let () = output.resize(total.written, 0.0);
     Ok(output)
+}
+
+
+#[cfg(test)]
+#[cfg(feature = "nightly")]
+mod tests {
+    use super::*;
+
+    use test::Bencher;
+
+
+    fn bench_convert_impl(b: &mut Bencher, converter: ConverterType) {
+        use std::f32::consts::PI;
+
+        let freq = PI * 880f32 / 44100f32;
+        let input = (0..44100)
+            .map(|i| (freq * i as f32).sin())
+            .collect::<Vec<_>>();
+
+        let () = b.iter(|| {
+            let resampled = convert(converter, 1, 44100, 48000, &input).unwrap();
+            assert!((48000..=48001).contains(&resampled.len()));
+        });
+    }
+
+    /// Benchmark sample rate conversion with the `SincBestQuality`
+    /// type.
+    #[bench]
+    fn bench_convert_sinc_best(b: &mut Bencher) {
+        let converter = ConverterType::SincBestQuality;
+        let () = bench_convert_impl(b, converter);
+    }
+
+    /// Benchmark sample rate conversion with the `SincMediumQuality`
+    /// type.
+    #[bench]
+    fn bench_convert_sinc_medium(b: &mut Bencher) {
+        let converter = ConverterType::SincMediumQuality;
+        let () = bench_convert_impl(b, converter);
+    }
+
+    /// Benchmark sample rate conversion with the `SincFastest` type.
+    #[bench]
+    fn bench_convert_sinc_fast(b: &mut Bencher) {
+        let converter = ConverterType::SincFastest;
+        let () = bench_convert_impl(b, converter);
+    }
+
+    /// Benchmark sample rate conversion with the `ZeroOrderHold` type.
+    #[bench]
+    fn bench_convert_zero_order_hold(b: &mut Bencher) {
+        let converter = ConverterType::ZeroOrderHold;
+        let () = bench_convert_impl(b, converter);
+    }
+
+    /// Benchmark sample rate conversion with the `Linear` type.
+    #[bench]
+    fn bench_convert_linear(b: &mut Bencher) {
+        let converter = ConverterType::Linear;
+        let () = bench_convert_impl(b, converter);
+    }
 }

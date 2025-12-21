@@ -27,6 +27,17 @@ keywords = [
 ]
 description = "A library based on libsamplerate for converting samplerates"
 
+[features]
+default = []
+
+# Below here are dev-mostly features that should not be needed by
+# regular users.
+
+# Enable code paths requiring a nightly toolchain. This feature is only meant to
+# be used for testing and benchmarking purposes, not for the core library, which
+# is expected to work on stable.
+nightly = []
+
 [dependencies]
 libsamplerate-rs = { version = "0.1", path = "libsamplerate-rs" }
 
