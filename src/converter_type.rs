@@ -8,9 +8,6 @@ use libsamplerate_rs::SRC_SINC_FASTEST;
 use libsamplerate_rs::SRC_SINC_MEDIUM_QUALITY;
 use libsamplerate_rs::SRC_ZERO_ORDER_HOLD;
 
-use crate::error::Error;
-use crate::error::ErrorCode;
-
 
 /// A converter type used to distinguish the interpolation function used by libsamplerate.
 /// Has a great impact on quality and performance.
@@ -24,18 +21,6 @@ pub enum ConverterType {
 }
 
 impl ConverterType {
-    /// Create a new `ConverterType` enum from the corresponding integer.
-    pub fn from_int(value: isize) -> Result<Self, Error> {
-        match value {
-            0 => Ok(Self::SincBestQuality),
-            1 => Ok(Self::SincMediumQuality),
-            2 => Ok(Self::SincFastest),
-            3 => Ok(Self::ZeroOrderHold),
-            4 => Ok(Self::Linear),
-            _ => Err(Error::from_code(ErrorCode::BadConverter)),
-        }
-    }
-
     /// Return a human-readable name for this type of converter.
     pub fn name(&self) -> &'static str {
         unsafe { CStr::from_ptr(src_get_name(*self as i32)) }
@@ -55,24 +40,6 @@ impl ConverterType {
 mod tests {
     use super::*;
 
-    #[test]
-    fn create_converter_type_from_int() {
-        assert_eq!(
-            ConverterType::from_int(0),
-            Ok(ConverterType::SincBestQuality)
-        );
-        assert_eq!(
-            ConverterType::from_int(1),
-            Ok(ConverterType::SincMediumQuality)
-        );
-        assert_eq!(ConverterType::from_int(2), Ok(ConverterType::SincFastest));
-        assert_eq!(ConverterType::from_int(3), Ok(ConverterType::ZeroOrderHold));
-        assert_eq!(ConverterType::from_int(4), Ok(ConverterType::Linear));
-        assert_eq!(
-            ConverterType::from_int(8),
-            Err(Error::from_code(ErrorCode::BadConverter))
-        );
-    }
 
     #[test]
     fn name() {
