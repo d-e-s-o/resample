@@ -5,9 +5,9 @@
 #[cfg(all(test, feature = "nightly"))]
 extern crate test;
 
-pub mod converter_type;
-pub mod error;
-pub mod samplerate;
+mod converter_type;
+mod error;
+mod samplerate;
 
 #[cfg(test)]
 mod sanity_test;
