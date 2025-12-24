@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use hound::SampleFormat;
 use hound::WavSpec;
 use hound::WavWriter;
@@ -8,7 +10,7 @@ use resample::ConverterType;
 
 fn main() {
     // Generate a 880Hz sine wave for 1 second in 44100Hz with one channel.
-    let freq = std::f32::consts::PI * 880f32 / 44100f32;
+    let freq = PI * 880f32 / 44100f32;
     let input: Vec<f32> = (0..44100 * 5).map(|i| (freq * i as f32).sin()).collect();
 
     // Resample the input from 44100Hz to 48000Hz.

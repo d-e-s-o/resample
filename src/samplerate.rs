@@ -60,11 +60,13 @@ impl Samplerate {
     ) -> Result<Self, Error> {
         // Make sure that the provided ratio is supported by libsamplerate.
         let ratio = to_rate as f64 / from_rate as f64;
+        // SAFETY: `src_is_valid_ratio` is always safe to call.
         if unsafe { src_is_valid_ratio(ratio) } == 0 {
             return Err(Error::from_code(ErrorCode::BadSrcRatio));
         }
         // Construct the `SRC_STATE` struct and check if that worked.
         let mut error = 0i32;
+        // SAFETY: `error` is a valid pointer coming from a reference.
         let state = unsafe { src_new(converter_type as i32, i32::from(channels), &raw mut error) };
         let error = ErrorCode::from_int(error);
 
@@ -101,6 +103,9 @@ impl Samplerate {
             output_frames_gen: 0,
         };
 
+        // SAFETY: `state` is valid and guaranteed to be coming from a
+        //          previous `src_new` call and `src` is a pointer
+        //          originating from a reference.
         let error = unsafe { src_process(self.state, &raw mut src) };
         match ErrorCode::from_int(error) {
             ErrorCode::NoError => {
@@ -153,6 +158,8 @@ impl Samplerate {
 
 impl Drop for Samplerate {
     fn drop(&mut self) {
+        // SAFETY: `state` is valid and guaranteed to be coming from a
+        //          previous `src_new` call.
         unsafe { src_delete(self.state) };
     }
 }

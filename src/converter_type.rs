@@ -23,16 +23,27 @@ pub enum ConverterType {
 impl ConverterType {
     /// Return a human-readable name for this type of converter.
     pub fn name(&self) -> &'static str {
-        unsafe { CStr::from_ptr(src_get_name(*self as i32)) }
-            .to_str()
-            .unwrap()
+        // SAFETY: `src_get_name` is always safe to call.
+        let ptr = unsafe { src_get_name(*self as i32) };
+        // SANITY: `src_get_name` always returns a valid pointer for a
+        //         valid convert and we only have known convert types.
+        assert!(!ptr.is_null());
+
+        // SAFETY: `ptr` is not NULL and guaranteed to be valid.
+        unsafe { CStr::from_ptr(ptr) }.to_str().unwrap()
     }
 
     /// Return the human-readable description for this type of converter.
     pub fn description(&self) -> &'static str {
-        unsafe { CStr::from_ptr(src_get_description(*self as i32)) }
-            .to_str()
-            .unwrap()
+        // SAFETY: `src_get_description` is always safe to call.
+        let ptr = unsafe { src_get_description(*self as i32) };
+        // SANITY: `src_get_description` always returns a valid pointer
+        //         for a valid convert and we only have known convert
+        //         types.
+        assert!(!ptr.is_null());
+
+        // SAFETY: `ptr` is not NULL and guaranteed to be valid.
+        unsafe { CStr::from_ptr(ptr) }.to_str().unwrap()
     }
 }
 

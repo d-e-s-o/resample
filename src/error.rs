@@ -72,9 +72,15 @@ impl ErrorCode {
     pub fn description(&self) -> &'static str {
         match self {
             Self::Unknown => "Unkown error.",
-            _ => unsafe { CStr::from_ptr(src_strerror(*self as i32)) }
-                .to_str()
-                .unwrap(),
+            _ => {
+                // SAFETY: `src_strerror` is always safe to call.
+                let ptr = unsafe { src_strerror(*self as i32) };
+                // SANITY: `src_strerror` always returns a valid pointer.
+                assert!(!ptr.is_null());
+
+                // SAFETY: `ptr` is not NULL and guaranteed to be valid.
+                unsafe { CStr::from_ptr(ptr) }.to_str().unwrap()
+            },
         }
     }
 }

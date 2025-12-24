@@ -1,3 +1,5 @@
+#![expect(clippy::too_many_arguments)]
+
 use std::cmp::PartialOrd;
 use std::f64::consts::PI;
 

@@ -5,3 +5,23 @@ edition = "2021"
 
 [dependencies]
 libc = "0.2"
+
+[lints.rust]
+unused-unsafe = "allow"
+
+[lints.clippy]
+assign-op-pattern = "allow"
+collapsible-else-if = "allow"
+collapsible-if = "allow"
+diverging-sub-expression = "allow"
+excessive-precision = "allow"
+let-and-return = "allow"
+let-unit-value = "allow"
+missing-safety-doc = "allow"
+module-inception = "allow"
+needless-return = "allow"
+nonminimal-bool = "allow"
+precedence = "allow"
+type-complexity = "allow"
+unnecessary-cast = "allow"
+zero-ptr = "allow"
