@@ -7,7 +7,7 @@ extern crate test;
 
 mod converter_type;
 mod error;
-mod samplerate;
+mod resampler;
 
 #[cfg(test)]
 mod sanity_test;
@@ -17,14 +17,14 @@ pub use libsamplerate_rs;
 pub use crate::converter_type::ConverterType;
 pub use crate::error::Error;
 pub use crate::error::ErrorCode;
-pub use crate::samplerate::Processed;
-pub use crate::samplerate::Samplerate;
+pub use crate::resampler::Processed;
+pub use crate::resampler::Resampler;
 
 
 /// Perform a simple samplerate conversion of a large chunk of audio.
 ///
 /// This function is not suitable for streamed audio. Use the
-/// [`Samplerate`] type in such a context.
+/// [`Resampler`] type in such a context.
 ///
 /// The length of `input` must be `input_frames * channels`.
 ///
@@ -54,14 +54,14 @@ pub fn convert(
     let input_frames = input_len / usize::from(channels);
     let output_frames = (input_frames * to_rate as usize).div_ceil(from_rate as usize);
     let mut output = vec![0.0; output_frames * usize::from(channels)];
-    let mut converter = Samplerate::new(converter_type, channels, from_rate, to_rate)?;
+    let mut resampler = Resampler::new(converter_type, channels, from_rate, to_rate)?;
 
     let mut total = Processed::default();
     loop {
         let in_buf = &input[total.read..];
         let out_buf = &mut output[total.written..];
 
-        let processed = converter.finalize(in_buf, out_buf)?;
+        let processed = resampler.finalize(in_buf, out_buf)?;
 
         total.read += processed.read;
         total.written += processed.written;

@@ -20,36 +20,37 @@ pub struct Processed {
 }
 
 
-/// A samplerate converter. This is a wrapper around libsamplerate's `SRC_STATE` which also
-/// stores the source and target samplerates.
+/// A samplerate converter.
+///
+/// This is a wrapper around `libsamplerate`'s `SRC_STATE`.
 ///
 /// # Example
 ///
 /// ```
 /// # use std::f32::consts::PI;
-/// use resample::{Samplerate, ConverterType};
+/// use resample::{Resampler, ConverterType};
 ///
 /// // Generate a 880Hz sine wave for 1 second in 44100Hz with one channel.
 /// let freq = PI * 880_f32 / 44100_f32;
 /// let mut input = (0..44100).map(|i| (freq * i as f32).sin()).collect::<Vec<f32>>();
 /// let mut output = vec![0.0; 48000];
 ///
-/// // Instantiate a new converter.
-/// let mut converter = Samplerate::new(ConverterType::SincBestQuality, 1, 44100, 48000).unwrap();
+/// // Instantiate a new resampler.
+/// let mut resampler = Resampler::new(ConverterType::SincBestQuality, 1, 44100, 48000).unwrap();
 ///
 /// // Resample the input from 44100Hz to 48000Hz.
-/// let processed = converter.finalize(&input, &mut output).unwrap();
+/// let processed = resampler.finalize(&input, &mut output).unwrap();
 /// assert_eq!(processed.read, 44100);
 /// assert_eq!(processed.written, 48000);
 /// ```
 #[derive(Debug)]
-pub struct Samplerate {
+pub struct Resampler {
     state: *mut SRC_STATE,
     channels: u8,
     ratio: f64,
 }
 
-impl Samplerate {
+impl Resampler {
     /// Create a new samplerate converter assuming the given channel
     /// count and sample rates.
     pub fn new(
@@ -58,7 +59,7 @@ impl Samplerate {
         from_rate: u32,
         to_rate: u32,
     ) -> Result<Self, Error> {
-        // Make sure that the provided ratio is supported by libsamplerate.
+        // Make sure that the provided ratio is supported by `libsamplerate`.
         let ratio = to_rate as f64 / from_rate as f64;
         // SAFETY: `src_is_valid_ratio` is always safe to call.
         if unsafe { src_is_valid_ratio(ratio) } == 0 {
@@ -156,7 +157,7 @@ impl Samplerate {
     }
 }
 
-impl Drop for Samplerate {
+impl Drop for Resampler {
     fn drop(&mut self) {
         // SAFETY: `state` is valid and guaranteed to be coming from a
         //          previous `src_new` call.
@@ -174,8 +175,8 @@ mod tests {
 
     #[test]
     fn samplerate_new_channels_correct() {
-        let converter = Samplerate::new(ConverterType::Linear, 4, 44100, 48000).unwrap();
-        assert_eq!(converter.channels, 4);
+        let resampler = Resampler::new(ConverterType::Linear, 4, 44100, 48000).unwrap();
+        assert_eq!(resampler.channels, 4);
     }
 
     #[test]
@@ -186,9 +187,8 @@ mod tests {
             .map(|i| (freq * i as f32).sin())
             .collect::<Vec<f32>>();
 
-        // Create a new converter.
-        let mut converter =
-            Samplerate::new(ConverterType::SincBestQuality, 1, 44100, 48000).unwrap();
+        let mut resampler =
+            Resampler::new(ConverterType::SincBestQuality, 1, 44100, 48000).unwrap();
 
         // Resample the audio in chunks.
         let mut resampled = vec![0f32; 0];
@@ -197,35 +197,35 @@ mod tests {
 
         let mut in_chunks = input.chunks_exact(in_chunk_size);
         for in_chunk in in_chunks.by_ref() {
-            let processed = converter.process(in_chunk, &mut out_chunk_buf).unwrap();
+            let processed = resampler.process(in_chunk, &mut out_chunk_buf).unwrap();
             assert_eq!(processed.read, in_chunk.len());
             let () = resampled.extend(&out_chunk_buf[..processed.written]);
         }
 
         let rest = in_chunks.remainder();
         // NB: Even if `rest` is empty should finalization be performed.
-        let processed = converter.finalize(rest, &mut out_chunk_buf).unwrap();
+        let processed = resampler.finalize(rest, &mut out_chunk_buf).unwrap();
         assert_eq!(processed.read, rest.len());
         let () = resampled.extend(&out_chunk_buf[..processed.written]);
 
         assert_eq!(resampled.len(), 48000);
 
         // Resample the audio back.
-        let mut converter =
-            Samplerate::new(ConverterType::SincBestQuality, 1, 48000, 44100).unwrap();
+        let mut resampler =
+            Resampler::new(ConverterType::SincBestQuality, 1, 48000, 44100).unwrap();
         let mut output = vec![0f32; 0];
         let in_chunk_size = 4800; // 100ms
         let mut out_chunk_buf = vec![0.0; 4410];
 
         let mut in_chunks = resampled.chunks_exact(in_chunk_size);
         for in_chunk in in_chunks.by_ref() {
-            let processed = converter.process(in_chunk, &mut out_chunk_buf).unwrap();
+            let processed = resampler.process(in_chunk, &mut out_chunk_buf).unwrap();
             assert_eq!(processed.read, in_chunk.len());
             let () = output.extend(&out_chunk_buf[..processed.written]);
         }
 
         let rest = in_chunks.remainder();
-        let processed = converter.finalize(rest, &mut out_chunk_buf).unwrap();
+        let processed = resampler.finalize(rest, &mut out_chunk_buf).unwrap();
         assert_eq!(processed.read, rest.len());
         let () = output.extend(&out_chunk_buf[..processed.written]);
 
