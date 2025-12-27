@@ -5,8 +5,8 @@
 #[cfg(all(test, feature = "nightly"))]
 extern crate test;
 
-mod converter_type;
 mod error;
+mod resample_type;
 mod resampler;
 
 #[cfg(test)]
@@ -14,9 +14,9 @@ mod sanity_test;
 
 pub use libsamplerate_rs;
 
-pub use crate::converter_type::ConverterType;
 pub use crate::error::Error;
 pub use crate::error::ErrorCode;
+pub use crate::resample_type::ResampleType;
 pub use crate::resampler::Processed;
 pub use crate::resampler::Resampler;
 
@@ -32,19 +32,19 @@ pub use crate::resampler::Resampler;
 ///
 /// ```
 /// # use std::f32::consts::PI;
-/// use resample::{convert, ConverterType};
+/// use resample::{convert, ResampleType};
 ///
 /// // Generate a 880Hz sine wave for 1 second in 44100Hz with one channel.
 /// let freq = PI * 880_f32 / 44100_f32;
 /// let mut input = (0..44100).map(|i| (freq * i as f32).sin()).collect::<Vec<f32>>();
 ///
 /// // Resample the input from 44100Hz to 48000Hz.
-/// let converter = ConverterType::SincBestQuality;
-/// let resampled = convert(converter, 1, 44100, 48000, &input).unwrap();
+/// let type_ = ResampleType::SincBestQuality;
+/// let resampled = convert(type_, 1, 44100, 48000, &input).unwrap();
 /// assert_eq!(resampled.len(), 48000);
 /// ```
 pub fn convert(
-    converter_type: ConverterType,
+    type_: ResampleType,
     channels: u8,
     from_rate: u32,
     to_rate: u32,
@@ -54,7 +54,7 @@ pub fn convert(
     let input_frames = input_len / usize::from(channels);
     let output_frames = (input_frames * to_rate as usize).div_ceil(from_rate as usize);
     let mut output = vec![0.0; output_frames * usize::from(channels)];
-    let mut resampler = Resampler::new(converter_type, channels, from_rate, to_rate)?;
+    let mut resampler = Resampler::new(type_, channels, from_rate, to_rate)?;
 
     let mut total = Processed::default();
     loop {
@@ -91,7 +91,7 @@ mod tests {
     use test::Bencher;
 
 
-    fn bench_convert_impl(b: &mut Bencher, converter: ConverterType) {
+    fn bench_resample_impl(b: &mut Bencher, type_: ResampleType) {
         use std::f32::consts::PI;
 
         let freq = PI * 880f32 / 44100f32;
@@ -100,7 +100,7 @@ mod tests {
             .collect::<Vec<_>>();
 
         let () = b.iter(|| {
-            let resampled = convert(converter, 1, 44100, 48000, &input).unwrap();
+            let resampled = convert(type_, 1, 44100, 48000, &input).unwrap();
             assert!((48000..=48001).contains(&resampled.len()));
         });
     }
@@ -108,37 +108,32 @@ mod tests {
     /// Benchmark sample rate conversion with the `SincBestQuality`
     /// type.
     #[bench]
-    fn bench_convert_sinc_best(b: &mut Bencher) {
-        let converter = ConverterType::SincBestQuality;
-        let () = bench_convert_impl(b, converter);
+    fn bench_resample_sinc_best(b: &mut Bencher) {
+        let () = bench_resample_impl(b, ResampleType::SincBestQuality);
     }
 
     /// Benchmark sample rate conversion with the `SincMediumQuality`
     /// type.
     #[bench]
-    fn bench_convert_sinc_medium(b: &mut Bencher) {
-        let converter = ConverterType::SincMediumQuality;
-        let () = bench_convert_impl(b, converter);
+    fn bench_resample_sinc_medium(b: &mut Bencher) {
+        let () = bench_resample_impl(b, ResampleType::SincMediumQuality);
     }
 
     /// Benchmark sample rate conversion with the `SincFastest` type.
     #[bench]
-    fn bench_convert_sinc_fast(b: &mut Bencher) {
-        let converter = ConverterType::SincFastest;
-        let () = bench_convert_impl(b, converter);
+    fn bench_resample_sinc_fast(b: &mut Bencher) {
+        let () = bench_resample_impl(b, ResampleType::SincFastest);
     }
 
     /// Benchmark sample rate conversion with the `ZeroOrderHold` type.
     #[bench]
-    fn bench_convert_zero_order_hold(b: &mut Bencher) {
-        let converter = ConverterType::ZeroOrderHold;
-        let () = bench_convert_impl(b, converter);
+    fn bench_resample_zero_order_hold(b: &mut Bencher) {
+        let () = bench_resample_impl(b, ResampleType::ZeroOrderHold);
     }
 
     /// Benchmark sample rate conversion with the `Linear` type.
     #[bench]
-    fn bench_convert_linear(b: &mut Bencher) {
-        let converter = ConverterType::Linear;
-        let () = bench_convert_impl(b, converter);
+    fn bench_resample_linear(b: &mut Bencher) {
+        let () = bench_resample_impl(b, ResampleType::Linear);
     }
 }

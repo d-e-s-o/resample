@@ -5,9 +5,9 @@ use libsamplerate_rs::src_process;
 use libsamplerate_rs::SRC_DATA;
 use libsamplerate_rs::SRC_STATE;
 
-use crate::converter_type::ConverterType;
 use crate::error::Error;
 use crate::error::ErrorCode;
+use crate::resample_type::ResampleType;
 
 
 /// A type representing the result of a samplerate conversion.
@@ -28,7 +28,7 @@ pub struct Processed {
 ///
 /// ```
 /// # use std::f32::consts::PI;
-/// use resample::{Resampler, ConverterType};
+/// use resample::{Resampler, ResampleType};
 ///
 /// // Generate a 880Hz sine wave for 1 second in 44100Hz with one channel.
 /// let freq = PI * 880_f32 / 44100_f32;
@@ -36,7 +36,7 @@ pub struct Processed {
 /// let mut output = vec![0.0; 48000];
 ///
 /// // Instantiate a new resampler.
-/// let mut resampler = Resampler::new(ConverterType::SincBestQuality, 1, 44100, 48000).unwrap();
+/// let mut resampler = Resampler::new(ResampleType::SincBestQuality, 1, 44100, 48000).unwrap();
 ///
 /// // Resample the input from 44100Hz to 48000Hz.
 /// let processed = resampler.finalize(&input, &mut output).unwrap();
@@ -54,7 +54,7 @@ impl Resampler {
     /// Create a new samplerate converter assuming the given channel
     /// count and sample rates.
     pub fn new(
-        converter_type: ConverterType,
+        converter_type: ResampleType,
         channels: u8,
         from_rate: u32,
         to_rate: u32,
@@ -175,7 +175,7 @@ mod tests {
 
     #[test]
     fn samplerate_new_channels_correct() {
-        let resampler = Resampler::new(ConverterType::Linear, 4, 44100, 48000).unwrap();
+        let resampler = Resampler::new(ResampleType::Linear, 4, 44100, 48000).unwrap();
         assert_eq!(resampler.channels, 4);
     }
 
@@ -187,8 +187,7 @@ mod tests {
             .map(|i| (freq * i as f32).sin())
             .collect::<Vec<f32>>();
 
-        let mut resampler =
-            Resampler::new(ConverterType::SincBestQuality, 1, 44100, 48000).unwrap();
+        let mut resampler = Resampler::new(ResampleType::SincBestQuality, 1, 44100, 48000).unwrap();
 
         // Resample the audio in chunks.
         let mut resampled = vec![0f32; 0];
@@ -211,8 +210,7 @@ mod tests {
         assert_eq!(resampled.len(), 48000);
 
         // Resample the audio back.
-        let mut resampler =
-            Resampler::new(ConverterType::SincBestQuality, 1, 48000, 44100).unwrap();
+        let mut resampler = Resampler::new(ResampleType::SincBestQuality, 1, 48000, 44100).unwrap();
         let mut output = vec![0f32; 0];
         let in_chunk_size = 4800; // 100ms
         let mut out_chunk_buf = vec![0.0; 4410];

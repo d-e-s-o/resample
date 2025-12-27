@@ -37,7 +37,7 @@ pub enum ErrorCode {
 }
 
 impl ErrorCode {
-    /// Create a new `ConverterType` enum from the corresponding integer.
+    /// Create a new `ResampleType` enum from the corresponding integer.
     pub fn from_int(value: i32) -> Self {
         match value {
             0 => Self::NoError,

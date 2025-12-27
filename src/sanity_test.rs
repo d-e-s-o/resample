@@ -5,7 +5,7 @@ use std::f64::consts::PI;
 
 use rstest::rstest;
 
-use crate::ConverterType;
+use crate::ResampleType;
 
 
 #[rustfmt::skip]
@@ -25,13 +25,13 @@ fn simple_resample(
     to_rate: usize,
     n_ch: u8,
     #[values(
-        ConverterType::SincBestQuality,
-        ConverterType::SincMediumQuality,
-        ConverterType::SincFastest,
-        ConverterType::ZeroOrderHold,
-        ConverterType::Linear
+        ResampleType::SincBestQuality,
+        ResampleType::SincMediumQuality,
+        ResampleType::SincFastest,
+        ResampleType::ZeroOrderHold,
+        ResampleType::Linear
     )]
-    converter: ConverterType,
+    type_: ResampleType,
     bleed_size: usize,
     in_bleed_eps: f32,
     out_bleed_eps: f32,
@@ -44,7 +44,7 @@ fn simple_resample(
         .collect::<Vec<f32>>();
 
     let down_data = crate::convert(
-        converter,
+        type_,
         n_ch,
         from_rate as u32,
         to_rate as u32,
@@ -53,7 +53,7 @@ fn simple_resample(
     .unwrap();
 
     let up_data = crate::convert(
-        converter,
+        type_,
         n_ch,
         to_rate as u32,
         from_rate as u32,
@@ -63,7 +63,7 @@ fn simple_resample(
 
     // For now we only assert differences for the best quality
     // resampling mode.
-    if converter == ConverterType::SincBestQuality {
+    if type_ == ResampleType::SincBestQuality {
         assert_eq!(
             up_data.len(),
             ((n * to_rate).div_ceil(from_rate) * from_rate).div_ceil(to_rate) * n_chs

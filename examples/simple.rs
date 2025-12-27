@@ -5,7 +5,7 @@ use hound::WavSpec;
 use hound::WavWriter;
 
 use resample::convert;
-use resample::ConverterType;
+use resample::ResampleType;
 
 
 fn main() {
@@ -14,8 +14,8 @@ fn main() {
     let input: Vec<f32> = (0..44100 * 5).map(|i| (freq * i as f32).sin()).collect();
 
     // Resample the input from 44100Hz to 48000Hz.
-    let converter = ConverterType::SincBestQuality;
-    let resampled = convert(converter, 1, 44100, 48000, &input).unwrap();
+    let type_ = ResampleType::SincBestQuality;
+    let resampled = convert(type_, 1, 44100, 48000, &input).unwrap();
 
     // Write the resampled pcm data to disk.
     let mut writer = WavWriter::create(
