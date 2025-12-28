@@ -7,8 +7,10 @@ use std::fmt::Result as FmtResult;
 use libsamplerate_rs::src_strerror;
 
 
+/// A type specifying a general category of sample rate conversion error.
+#[non_exhaustive]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum ErrorCode {
+pub enum ErrorKind {
     Unknown = -1,
     NoError = 0,
     MallocFailed = 1,
@@ -36,8 +38,8 @@ pub enum ErrorCode {
     MaxError = 23,
 }
 
-impl ErrorCode {
-    /// Create a new `ResampleType` enum from the corresponding integer.
+impl ErrorKind {
+    /// Create a new [`ErrorKind`] enum from the corresponding integer.
     pub fn from_int(value: i32) -> Self {
         match value {
             0 => Self::NoError,
@@ -85,28 +87,29 @@ impl ErrorCode {
     }
 }
 
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Error {
-    code: ErrorCode,
+    kind: ErrorKind,
 }
 
 impl Error {
     pub fn from_int(code: i32) -> Self {
         Self {
-            code: ErrorCode::from_int(code),
+            kind: ErrorKind::from_int(code),
         }
     }
 
-    pub fn from_code(code: ErrorCode) -> Self {
-        Self { code }
+    pub fn from_kind(kind: ErrorKind) -> Self {
+        Self { kind }
     }
 
-    pub fn code(&self) -> ErrorCode {
-        self.code
+    pub fn kind(&self) -> ErrorKind {
+        self.kind
     }
 
     pub fn description(&self) -> &'static str {
-        self.code.description()
+        self.kind.description()
     }
 }
 
@@ -118,9 +121,10 @@ impl Display for Error {
 
 impl StdError for Error {
     fn description(&self) -> &str {
-        self.code.description()
+        self.kind.description()
     }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -128,131 +132,131 @@ mod tests {
 
     #[test]
     fn create_converter_type_from_int() {
-        assert_eq!(ErrorCode::from_int(0), ErrorCode::NoError);
-        assert_eq!(ErrorCode::from_int(1), ErrorCode::MallocFailed);
-        assert_eq!(ErrorCode::from_int(2), ErrorCode::BadState);
-        assert_eq!(ErrorCode::from_int(3), ErrorCode::BadData);
-        assert_eq!(ErrorCode::from_int(4), ErrorCode::BadDataPtr);
-        assert_eq!(ErrorCode::from_int(5), ErrorCode::NoPrivate);
-        assert_eq!(ErrorCode::from_int(6), ErrorCode::BadSrcRatio);
-        assert_eq!(ErrorCode::from_int(7), ErrorCode::BadProcPtr);
-        assert_eq!(ErrorCode::from_int(8), ErrorCode::ShiftBits);
-        assert_eq!(ErrorCode::from_int(9), ErrorCode::FilterLen);
-        assert_eq!(ErrorCode::from_int(10), ErrorCode::BadConverter);
-        assert_eq!(ErrorCode::from_int(11), ErrorCode::BadChannelCount);
-        assert_eq!(ErrorCode::from_int(12), ErrorCode::SincBadBufferLen);
-        assert_eq!(ErrorCode::from_int(13), ErrorCode::SizeIncompatibility);
-        assert_eq!(ErrorCode::from_int(14), ErrorCode::BadPrivPtr);
-        assert_eq!(ErrorCode::from_int(15), ErrorCode::BadSincState);
-        assert_eq!(ErrorCode::from_int(16), ErrorCode::DataOverlap);
-        assert_eq!(ErrorCode::from_int(17), ErrorCode::BadCallback);
-        assert_eq!(ErrorCode::from_int(18), ErrorCode::BadMode);
-        assert_eq!(ErrorCode::from_int(19), ErrorCode::NullCallback);
-        assert_eq!(ErrorCode::from_int(20), ErrorCode::NoVariableRatio);
-        assert_eq!(ErrorCode::from_int(21), ErrorCode::SincPrepareDataBadLen);
-        assert_eq!(ErrorCode::from_int(22), ErrorCode::BadInternalState);
-        assert_eq!(ErrorCode::from_int(23), ErrorCode::MaxError);
-        assert_eq!(ErrorCode::from_int(24), ErrorCode::Unknown);
+        assert_eq!(ErrorKind::from_int(0), ErrorKind::NoError);
+        assert_eq!(ErrorKind::from_int(1), ErrorKind::MallocFailed);
+        assert_eq!(ErrorKind::from_int(2), ErrorKind::BadState);
+        assert_eq!(ErrorKind::from_int(3), ErrorKind::BadData);
+        assert_eq!(ErrorKind::from_int(4), ErrorKind::BadDataPtr);
+        assert_eq!(ErrorKind::from_int(5), ErrorKind::NoPrivate);
+        assert_eq!(ErrorKind::from_int(6), ErrorKind::BadSrcRatio);
+        assert_eq!(ErrorKind::from_int(7), ErrorKind::BadProcPtr);
+        assert_eq!(ErrorKind::from_int(8), ErrorKind::ShiftBits);
+        assert_eq!(ErrorKind::from_int(9), ErrorKind::FilterLen);
+        assert_eq!(ErrorKind::from_int(10), ErrorKind::BadConverter);
+        assert_eq!(ErrorKind::from_int(11), ErrorKind::BadChannelCount);
+        assert_eq!(ErrorKind::from_int(12), ErrorKind::SincBadBufferLen);
+        assert_eq!(ErrorKind::from_int(13), ErrorKind::SizeIncompatibility);
+        assert_eq!(ErrorKind::from_int(14), ErrorKind::BadPrivPtr);
+        assert_eq!(ErrorKind::from_int(15), ErrorKind::BadSincState);
+        assert_eq!(ErrorKind::from_int(16), ErrorKind::DataOverlap);
+        assert_eq!(ErrorKind::from_int(17), ErrorKind::BadCallback);
+        assert_eq!(ErrorKind::from_int(18), ErrorKind::BadMode);
+        assert_eq!(ErrorKind::from_int(19), ErrorKind::NullCallback);
+        assert_eq!(ErrorKind::from_int(20), ErrorKind::NoVariableRatio);
+        assert_eq!(ErrorKind::from_int(21), ErrorKind::SincPrepareDataBadLen);
+        assert_eq!(ErrorKind::from_int(22), ErrorKind::BadInternalState);
+        assert_eq!(ErrorKind::from_int(23), ErrorKind::MaxError);
+        assert_eq!(ErrorKind::from_int(24), ErrorKind::Unknown);
     }
 
     #[test]
     fn description() {
-        assert_eq!(ErrorCode::NoError.description(), "No error.");
-        assert_eq!(ErrorCode::MallocFailed.description(), "Malloc failed.");
+        assert_eq!(ErrorKind::NoError.description(), "No error.");
+        assert_eq!(ErrorKind::MallocFailed.description(), "Malloc failed.");
         assert_eq!(
-            ErrorCode::BadState.description(),
+            ErrorKind::BadState.description(),
             "SRC_STATE pointer is NULL."
         );
         assert_eq!(
-            ErrorCode::BadData.description(),
+            ErrorKind::BadData.description(),
             "SRC_DATA pointer is NULL."
         );
         assert_eq!(
-            ErrorCode::BadDataPtr.description(),
+            ErrorKind::BadDataPtr.description(),
             "SRC_DATA->data_out or SRC_DATA->data_in is NULL."
         );
         assert_eq!(
-            ErrorCode::NoPrivate.description(),
+            ErrorKind::NoPrivate.description(),
             "Internal error. No private data."
         );
         assert_eq!(
-            ErrorCode::BadSrcRatio.description(),
+            ErrorKind::BadSrcRatio.description(),
             "SRC ratio outside [1/256, 256] range."
         );
         assert_eq!(
-            ErrorCode::BadSincState.description(),
+            ErrorKind::BadSincState.description(),
             "src_process() called without reset after end_of_input."
         );
         assert_eq!(
-            ErrorCode::BadProcPtr.description(),
+            ErrorKind::BadProcPtr.description(),
             "Internal error. No process pointer."
         );
         assert_eq!(
-            ErrorCode::ShiftBits.description(),
+            ErrorKind::ShiftBits.description(),
             "Internal error. SHIFT_BITS too large."
         );
         assert_eq!(
-            ErrorCode::FilterLen.description(),
+            ErrorKind::FilterLen.description(),
             "Internal error. Filter length too large."
         );
         assert_eq!(
-            ErrorCode::BadConverter.description(),
+            ErrorKind::BadConverter.description(),
             "Bad converter number."
         );
         assert_eq!(
-            ErrorCode::BadChannelCount.description(),
+            ErrorKind::BadChannelCount.description(),
             "Channel count must be >= 1."
         );
         assert_eq!(
-            ErrorCode::SincBadBufferLen.description(),
+            ErrorKind::SincBadBufferLen.description(),
             "Internal error. Bad buffer length. Please report this."
         );
         assert_eq!(
-            ErrorCode::SizeIncompatibility.description(),
+            ErrorKind::SizeIncompatibility.description(),
             "Internal error. Input data / internal buffer size difference. Please report this."
         );
         assert_eq!(
-            ErrorCode::BadPrivPtr.description(),
+            ErrorKind::BadPrivPtr.description(),
             "Internal error. Private pointer is NULL. Please report this."
         );
         assert_eq!(
-            ErrorCode::DataOverlap.description(),
+            ErrorKind::DataOverlap.description(),
             "Input and output data arrays overlap."
         );
         assert_eq!(
-            ErrorCode::BadCallback.description(),
+            ErrorKind::BadCallback.description(),
             "Supplied callback function pointer is NULL."
         );
         assert_eq!(
-            ErrorCode::BadMode.description(),
+            ErrorKind::BadMode.description(),
             "Calling mode differs from initialisation mode (ie process v callback)."
         );
         assert_eq!(
-            ErrorCode::NullCallback.description(),
+            ErrorKind::NullCallback.description(),
             "Callback function pointer is NULL in src_callback_read ()."
         );
         assert_eq!(
-            ErrorCode::NoVariableRatio.description(),
+            ErrorKind::NoVariableRatio.description(),
             "This converter only allows constant conversion ratios."
         );
         assert_eq!(
-            ErrorCode::SincPrepareDataBadLen.description(),
+            ErrorKind::SincPrepareDataBadLen.description(),
             "Internal error : Bad length in prepare_data ()."
         );
         assert_eq!(
-            ErrorCode::BadInternalState.description(),
+            ErrorKind::BadInternalState.description(),
             "Error : Someone is trampling on my internal state."
         );
         assert_eq!(
-            ErrorCode::MaxError.description(),
+            ErrorKind::MaxError.description(),
             "Placeholder. No error defined for this error number."
         );
-        assert_eq!(ErrorCode::Unknown.description(), "Unkown error.");
+        assert_eq!(ErrorKind::Unknown.description(), "Unkown error.");
     }
 
     #[test]
     fn error_from_code_and_int() {
-        assert_eq!(Error::from_int(2), Error::from_code(ErrorCode::BadState));
+        assert_eq!(Error::from_int(2), Error::from_kind(ErrorKind::BadState));
     }
 
     #[test]
@@ -260,7 +264,7 @@ mod tests {
         for i in -1..24 {
             assert_eq!(
                 Error::from_int(i).description(),
-                ErrorCode::from_int(i).description()
+                ErrorKind::from_int(i).description()
             );
         }
     }

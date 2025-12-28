@@ -6,7 +6,7 @@ use libsamplerate_rs::SRC_DATA;
 use libsamplerate_rs::SRC_STATE;
 
 use crate::error::Error;
-use crate::error::ErrorCode;
+use crate::error::ErrorKind;
 use crate::resample_type::ResampleType;
 
 
@@ -63,16 +63,16 @@ impl Resampler {
         let ratio = to_rate as f64 / from_rate as f64;
         // SAFETY: `src_is_valid_ratio` is always safe to call.
         if unsafe { src_is_valid_ratio(ratio) } == 0 {
-            return Err(Error::from_code(ErrorCode::BadSrcRatio));
+            return Err(Error::from_kind(ErrorKind::BadSrcRatio));
         }
         // Construct the `SRC_STATE` struct and check if that worked.
         let mut error = 0i32;
         // SAFETY: `error` is a valid pointer coming from a reference.
         let state = unsafe { src_new(converter_type as i32, i32::from(channels), &raw mut error) };
-        let error = ErrorCode::from_int(error);
+        let error = ErrorKind::from_int(error);
 
         match error {
-            ErrorCode::NoError => {
+            ErrorKind::NoError => {
                 let slf = Self {
                     state,
                     ratio,
@@ -80,7 +80,7 @@ impl Resampler {
                 };
                 Ok(slf)
             },
-            error => Err(Error::from_code(error)),
+            error => Err(Error::from_kind(error)),
         }
     }
 
@@ -108,8 +108,8 @@ impl Resampler {
         //          previous `src_new` call and `src` is a pointer
         //          originating from a reference.
         let error = unsafe { src_process(self.state, &raw mut src) };
-        match ErrorCode::from_int(error) {
-            ErrorCode::NoError => {
+        match ErrorKind::from_int(error) {
+            ErrorKind::NoError => {
                 let processed = Processed {
                     read: usize::try_from(src.input_frames_used).unwrap() * channels,
                     written: usize::try_from(src.output_frames_gen).unwrap() * channels,
