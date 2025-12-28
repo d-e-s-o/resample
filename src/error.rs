@@ -12,7 +12,6 @@ use libsamplerate_rs::src_strerror;
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum ErrorKind {
     Unknown = -1,
-    NoError = 0,
     MallocFailed = 1,
     BadState = 2,
     BadData = 3,
@@ -40,9 +39,9 @@ pub enum ErrorKind {
 
 impl ErrorKind {
     /// Create a new [`ErrorKind`] enum from the corresponding integer.
-    pub fn from_int(value: i32) -> Self {
-        match value {
-            0 => Self::NoError,
+    pub(crate) fn from_int(value: i32) -> Option<Self> {
+        let slf = match value {
+            0 => return None,
             1 => Self::MallocFailed,
             2 => Self::BadState,
             3 => Self::BadData,
@@ -67,7 +66,8 @@ impl ErrorKind {
             22 => Self::BadInternalState,
             23 => Self::MaxError,
             _ => Self::Unknown,
-        }
+        };
+        Some(slf)
     }
 
     /// Return the human-readable description for this error.
@@ -88,42 +88,46 @@ impl ErrorKind {
 }
 
 
+/// The error type used by the crate.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Error {
     kind: ErrorKind,
 }
 
 impl Error {
-    pub fn from_int(code: i32) -> Self {
-        Self {
-            kind: ErrorKind::from_int(code),
+    pub(crate) fn check_int(error: i32) -> Result<(), Self> {
+        match ErrorKind::from_int(error) {
+            None => Ok(()),
+            Some(kind) => Err(Self::from(kind)),
         }
     }
 
-    pub fn from_kind(kind: ErrorKind) -> Self {
-        Self { kind }
-    }
-
+    #[inline]
     pub fn kind(&self) -> ErrorKind {
         self.kind
     }
 
+    #[inline]
     pub fn description(&self) -> &'static str {
         self.kind.description()
     }
 }
 
+impl From<ErrorKind> for Error {
+    #[inline]
+    fn from(kind: ErrorKind) -> Self {
+        Self { kind }
+    }
+}
+
 impl Display for Error {
+    #[inline]
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         write!(f, "{}", self.description())
     }
 }
 
-impl StdError for Error {
-    fn description(&self) -> &str {
-        self.kind.description()
-    }
-}
+impl StdError for Error {}
 
 
 #[cfg(test)]
@@ -132,36 +136,41 @@ mod tests {
 
     #[test]
     fn create_converter_type_from_int() {
-        assert_eq!(ErrorKind::from_int(0), ErrorKind::NoError);
-        assert_eq!(ErrorKind::from_int(1), ErrorKind::MallocFailed);
-        assert_eq!(ErrorKind::from_int(2), ErrorKind::BadState);
-        assert_eq!(ErrorKind::from_int(3), ErrorKind::BadData);
-        assert_eq!(ErrorKind::from_int(4), ErrorKind::BadDataPtr);
-        assert_eq!(ErrorKind::from_int(5), ErrorKind::NoPrivate);
-        assert_eq!(ErrorKind::from_int(6), ErrorKind::BadSrcRatio);
-        assert_eq!(ErrorKind::from_int(7), ErrorKind::BadProcPtr);
-        assert_eq!(ErrorKind::from_int(8), ErrorKind::ShiftBits);
-        assert_eq!(ErrorKind::from_int(9), ErrorKind::FilterLen);
-        assert_eq!(ErrorKind::from_int(10), ErrorKind::BadConverter);
-        assert_eq!(ErrorKind::from_int(11), ErrorKind::BadChannelCount);
-        assert_eq!(ErrorKind::from_int(12), ErrorKind::SincBadBufferLen);
-        assert_eq!(ErrorKind::from_int(13), ErrorKind::SizeIncompatibility);
-        assert_eq!(ErrorKind::from_int(14), ErrorKind::BadPrivPtr);
-        assert_eq!(ErrorKind::from_int(15), ErrorKind::BadSincState);
-        assert_eq!(ErrorKind::from_int(16), ErrorKind::DataOverlap);
-        assert_eq!(ErrorKind::from_int(17), ErrorKind::BadCallback);
-        assert_eq!(ErrorKind::from_int(18), ErrorKind::BadMode);
-        assert_eq!(ErrorKind::from_int(19), ErrorKind::NullCallback);
-        assert_eq!(ErrorKind::from_int(20), ErrorKind::NoVariableRatio);
-        assert_eq!(ErrorKind::from_int(21), ErrorKind::SincPrepareDataBadLen);
-        assert_eq!(ErrorKind::from_int(22), ErrorKind::BadInternalState);
-        assert_eq!(ErrorKind::from_int(23), ErrorKind::MaxError);
-        assert_eq!(ErrorKind::from_int(24), ErrorKind::Unknown);
+        assert_eq!(ErrorKind::from_int(0), None);
+        assert_eq!(ErrorKind::from_int(1), Some(ErrorKind::MallocFailed));
+        assert_eq!(ErrorKind::from_int(2), Some(ErrorKind::BadState));
+        assert_eq!(ErrorKind::from_int(3), Some(ErrorKind::BadData));
+        assert_eq!(ErrorKind::from_int(4), Some(ErrorKind::BadDataPtr));
+        assert_eq!(ErrorKind::from_int(5), Some(ErrorKind::NoPrivate));
+        assert_eq!(ErrorKind::from_int(6), Some(ErrorKind::BadSrcRatio));
+        assert_eq!(ErrorKind::from_int(7), Some(ErrorKind::BadProcPtr));
+        assert_eq!(ErrorKind::from_int(8), Some(ErrorKind::ShiftBits));
+        assert_eq!(ErrorKind::from_int(9), Some(ErrorKind::FilterLen));
+        assert_eq!(ErrorKind::from_int(10), Some(ErrorKind::BadConverter));
+        assert_eq!(ErrorKind::from_int(11), Some(ErrorKind::BadChannelCount));
+        assert_eq!(ErrorKind::from_int(12), Some(ErrorKind::SincBadBufferLen));
+        assert_eq!(
+            ErrorKind::from_int(13),
+            Some(ErrorKind::SizeIncompatibility)
+        );
+        assert_eq!(ErrorKind::from_int(14), Some(ErrorKind::BadPrivPtr));
+        assert_eq!(ErrorKind::from_int(15), Some(ErrorKind::BadSincState));
+        assert_eq!(ErrorKind::from_int(16), Some(ErrorKind::DataOverlap));
+        assert_eq!(ErrorKind::from_int(17), Some(ErrorKind::BadCallback));
+        assert_eq!(ErrorKind::from_int(18), Some(ErrorKind::BadMode));
+        assert_eq!(ErrorKind::from_int(19), Some(ErrorKind::NullCallback));
+        assert_eq!(ErrorKind::from_int(20), Some(ErrorKind::NoVariableRatio));
+        assert_eq!(
+            ErrorKind::from_int(21),
+            Some(ErrorKind::SincPrepareDataBadLen)
+        );
+        assert_eq!(ErrorKind::from_int(22), Some(ErrorKind::BadInternalState));
+        assert_eq!(ErrorKind::from_int(23), Some(ErrorKind::MaxError));
+        assert_eq!(ErrorKind::from_int(24), Some(ErrorKind::Unknown));
     }
 
     #[test]
     fn description() {
-        assert_eq!(ErrorKind::NoError.description(), "No error.");
         assert_eq!(ErrorKind::MallocFailed.description(), "Malloc failed.");
         assert_eq!(
             ErrorKind::BadState.description(),
@@ -252,20 +261,5 @@ mod tests {
             "Placeholder. No error defined for this error number."
         );
         assert_eq!(ErrorKind::Unknown.description(), "Unkown error.");
-    }
-
-    #[test]
-    fn error_from_code_and_int() {
-        assert_eq!(Error::from_int(2), Error::from_kind(ErrorKind::BadState));
-    }
-
-    #[test]
-    fn error_description() {
-        for i in -1..24 {
-            assert_eq!(
-                Error::from_int(i).description(),
-                ErrorKind::from_int(i).description()
-            );
-        }
     }
 }
