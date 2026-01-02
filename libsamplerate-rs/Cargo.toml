@@ -1,7 +1,25 @@
 [package]
 name = "libsamplerate-rs"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2021"
+authors = ["Daniel Mueller <deso@posteo.net>"]
+license = "BSD-2-Clause"
+repository = "https://github.com/d-e-s-o/resample.git"
+categories = [
+  "algorithms",
+  "external-ffi-bindings",
+  "multimedia::audio",
+]
+keywords = [
+  "audio",
+  "convert",
+  "resample",
+  "samplerate",
+  "stream",
+]
+description = """
+c2rust transpiled version of libsamplerate.
+"""
 
 [dependencies]
 libc = "0.2"
