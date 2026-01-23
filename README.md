@@ -5,4 +5,10 @@
 resample
 ========
 
+- [Documentation][docs-rs]
+- [Changelog](CHANGELOG.md)
+
 A sample rate conversion library for Rust.
+
+
+[docs-rs]: https://docs.rs/resample

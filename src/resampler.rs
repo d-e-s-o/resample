@@ -130,6 +130,11 @@ impl Resampler {
     ///
     /// If the number of channels used was not `1` (Mono), the samples
     /// are expected to be stored interleaved.
+    ///
+    /// If the returned `Processed::written` value equals the size of
+    /// the output buffer this way indicate that more data is available
+    /// for consumption and that the method should be invoked again with
+    /// potentially remaining input.
     pub fn finalize(&mut self, input: &[f32], output: &mut [f32]) -> Result<Processed, Error> {
         let mut total = Processed::default();
 
@@ -171,55 +176,67 @@ mod tests {
         assert_eq!(resampler.channels, 4);
     }
 
-    #[test]
-    fn samplerate_conversion() {
-        // Generate a 880Hz sine wave for 1 second in 44100Hz with one channel.
-        let freq = PI * 880f32 / 44100f32;
-        let input = (0..44100)
-            .map(|i| (freq * i as f32).sin())
-            .collect::<Vec<f32>>();
-
-        let mut resampler = Resampler::new(ResampleType::SincBestQuality, 1, 44100, 48000).unwrap();
-
-        // Resample the audio in chunks.
+    fn resample(resampler: &mut Resampler, samples: &[f32]) -> Vec<f32> {
+        let chunk_size = 10 * 512;
         let mut resampled = vec![0f32; 0];
-        let in_chunk_size = 4410; // 100ms
-        let mut out_chunk_buf = vec![0.0; 4800];
+        let mut out_chunk_buf = vec![0.0; chunk_size];
 
-        let mut in_chunks = input.chunks_exact(in_chunk_size);
+        let mut in_chunks = samples.chunks_exact(chunk_size);
         for in_chunk in in_chunks.by_ref() {
             let processed = resampler.process(in_chunk, &mut out_chunk_buf).unwrap();
             assert_eq!(processed.read, in_chunk.len());
             let () = resampled.extend(&out_chunk_buf[..processed.written]);
         }
 
-        let rest = in_chunks.remainder();
-        // NB: Even if `rest` is empty should finalization be performed.
-        let processed = resampler.finalize(rest, &mut out_chunk_buf).unwrap();
-        assert_eq!(processed.read, rest.len());
-        let () = resampled.extend(&out_chunk_buf[..processed.written]);
+        let mut rest = in_chunks.remainder();
+        // NB: Even if `rest` is empty finalization should be performed.
+        loop {
+            let processed = resampler.finalize(rest, &mut out_chunk_buf).unwrap();
+            assert_eq!(processed.read, rest.len());
+            let () = resampled.extend(&out_chunk_buf[..processed.written]);
 
-        assert_eq!(resampled.len(), 48000);
+            if processed.written != out_chunk_buf.len() {
+                break
+            }
+
+            rest = &rest[processed.read..];
+        }
+        resampled
+    }
+
+    #[test]
+    fn samplerate_conversion() {
+        let in_srate = 44_100_usize;
+        let out_srate = 48_000_usize;
+
+        // Generate a 880Hz sine wave for 1 second in 44100Hz with one channel.
+        let freq = PI * 880f32 / in_srate as f32;
+        let input = (0..in_srate)
+            .map(|i| (freq * i as f32).sin())
+            .collect::<Vec<f32>>();
+
+        let mut resampler = Resampler::new(
+            ResampleType::SincBestQuality,
+            1,
+            in_srate as u32,
+            out_srate as u32,
+        )
+        .unwrap();
+
+        // Resample the audio in chunks.
+        let resampled = resample(&mut resampler, &input);
+        assert_eq!(resampled.len(), out_srate);
 
         // Resample the audio back.
-        let mut resampler = Resampler::new(ResampleType::SincBestQuality, 1, 48000, 44100).unwrap();
-        let mut output = vec![0f32; 0];
-        let in_chunk_size = 4800; // 100ms
-        let mut out_chunk_buf = vec![0.0; 4410];
-
-        let mut in_chunks = resampled.chunks_exact(in_chunk_size);
-        for in_chunk in in_chunks.by_ref() {
-            let processed = resampler.process(in_chunk, &mut out_chunk_buf).unwrap();
-            assert_eq!(processed.read, in_chunk.len());
-            let () = output.extend(&out_chunk_buf[..processed.written]);
-        }
-
-        let rest = in_chunks.remainder();
-        let processed = resampler.finalize(rest, &mut out_chunk_buf).unwrap();
-        assert_eq!(processed.read, rest.len());
-        let () = output.extend(&out_chunk_buf[..processed.written]);
-
-        assert_eq!(output.len(), 44100);
+        let mut resampler = Resampler::new(
+            ResampleType::SincBestQuality,
+            1,
+            out_srate as u32,
+            in_srate as u32,
+        )
+        .unwrap();
+        let output = resample(&mut resampler, &resampled);
+        assert_eq!(output.len(), in_srate);
 
         // Expect the difference between all input frames and all output frames to be less than
         // an epsilon.
