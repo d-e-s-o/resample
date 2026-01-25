@@ -2,6 +2,7 @@ use libsamplerate_rs::src_delete;
 use libsamplerate_rs::src_is_valid_ratio;
 use libsamplerate_rs::src_new;
 use libsamplerate_rs::src_process;
+use libsamplerate_rs::src_reset;
 use libsamplerate_rs::SRC_DATA;
 use libsamplerate_rs::SRC_STATE;
 
@@ -152,6 +153,15 @@ impl Resampler {
             }
         }
     }
+
+    /// Reset the internal converter's state.
+    pub fn reset(&mut self) -> Result<(), Error> {
+        // SAFETY: `state` is valid and guaranteed to be coming from a
+        //          previous `src_new` call.
+        let error = unsafe { src_reset(self.state) };
+        let () = Error::check_int(error)?;
+        Ok(())
+    }
 }
 
 impl Drop for Resampler {
@@ -245,5 +255,52 @@ mod tests {
             .zip(output)
             .fold(0f32, |max, (input, output)| max.max((input - output).abs()));
         assert!(error < 0.002);
+    }
+
+
+    /// Check that our reset logic works as it should.
+    #[test]
+    fn resetting() {
+        let in_srate = 44_100_usize;
+        let out_srate = 48_000_usize;
+
+        let freq = PI * 880f32 / in_srate as f32;
+        let input = (0..in_srate)
+            .map(|i| (freq * i as f32).sin())
+            .collect::<Vec<f32>>();
+
+        let mut resampler = Resampler::new(
+            ResampleType::SincBestQuality,
+            1,
+            in_srate as u32,
+            out_srate as u32,
+        )
+        .unwrap();
+        let mut buf = vec![0.0; 1024];
+        let samples = &input[512..];
+        let processed = resampler.process(samples, &mut buf).unwrap();
+        assert_eq!(processed.read, samples.len());
+
+        // Reset the Resampler. Afterwards it shouldn't contain any
+        // stale chunks.
+        let () = resampler.reset().unwrap();
+
+        let output = resample(&mut resampler, &input);
+        assert_eq!(output.len(), out_srate);
+
+        // Now check that `output` matches exactly what we would produce
+        // with a new `Resampler` object, to make sure that no state was
+        // left over after the `reset`.
+        let mut resampler = Resampler::new(
+            ResampleType::SincBestQuality,
+            1,
+            in_srate as u32,
+            out_srate as u32,
+        )
+        .unwrap();
+        let reference = resample(&mut resampler, &input);
+        assert_eq!(reference.len(), out_srate);
+
+        assert_eq!(output, reference);
     }
 }
