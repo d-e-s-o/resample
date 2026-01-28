@@ -6,7 +6,7 @@ members = [
 
 [package]
 name = "resample"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Daniel Mueller <deso@posteo.net>"]
 license = "BSD-2-Clause"
