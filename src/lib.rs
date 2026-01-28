@@ -9,9 +9,6 @@ mod error;
 mod resample_type;
 mod resampler;
 
-#[cfg(test)]
-mod sanity_test;
-
 pub use crate::error::Error;
 pub use crate::error::ErrorKind;
 pub use crate::resample_type::ResampleType;

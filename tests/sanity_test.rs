@@ -5,7 +5,8 @@ use std::f64::consts::PI;
 
 use rstest::rstest;
 
-use crate::ResampleType;
+use resample::convert;
+use resample::ResampleType;
 
 
 #[rustfmt::skip]
@@ -43,7 +44,7 @@ fn simple_resample(
         .map(|x| x as f32)
         .collect::<Vec<f32>>();
 
-    let down_data = crate::convert(
+    let down_data = convert(
         type_,
         n_ch,
         from_rate as u32,
@@ -52,7 +53,7 @@ fn simple_resample(
     )
     .unwrap();
 
-    let up_data = crate::convert(
+    let up_data = convert(
         type_,
         n_ch,
         to_rate as u32,
